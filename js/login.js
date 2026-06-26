@@ -25,6 +25,46 @@ tabs.forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)))
 document.getElementById('ir-registro')?.addEventListener('click', () => switchTab('registro'))
 document.getElementById('ir-login')?.addEventListener('click',    () => switchTab('login'))
 
+// ── Recuperar contraseña (panel especial, fuera de los tabs) ──
+function mostrarPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'))
+  document.getElementById(id)?.classList.add('on')
+}
+
+document.getElementById('ir-recuperar')?.addEventListener('click', () => {
+  mostrarPanel('panel-recuperar')
+})
+document.getElementById('ir-login-from-recuperar')?.addEventListener('click', () => {
+  switchTab('login')
+})
+
+document.getElementById('btn-recuperar')?.addEventListener('click', async () => {
+  const btn   = document.getElementById('btn-recuperar')
+  const email = document.getElementById('rec-email').value.trim()
+  if (!email) { toast('Ingresá tu email', 'err'); return }
+
+  btn.disabled = true; btn.textContent = 'Enviando...'
+
+  const res  = await fetch('api/auth.php?action=solicitar_reset', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  })
+  const data = await res.json()
+
+  btn.disabled = false; btn.textContent = 'Enviar link de recuperación'
+
+  if (data.error) { toast('Error: ' + data.error, 'err'); return }
+
+  toast('Si el email existe, te enviamos un link de recuperación 📧', 'ok')
+
+  // En desarrollo (XAMPP): mostrar el link directamente si la API lo devuelve
+  if (data.dev_link) {
+    toast('Link de desarrollo: ' + data.dev_link, 'inf')
+    console.log('Reset link (dev):', data.dev_link)
+  }
+})
+
 // ── Tipo de usuario ──
 let tipoSel = 'comprador'
 document.querySelectorAll('.tipo-opt').forEach(opt => {
@@ -38,6 +78,8 @@ document.querySelectorAll('.tipo-opt').forEach(opt => {
     tipoSel = opt.dataset.tipo
     const campo = document.getElementById('campo-panaderia')
     if (campo) campo.style.display = tipoSel === 'vendedor' ? 'block' : 'none'
+    const aviso = document.getElementById('aviso-vendedor')
+    if (aviso) aviso.style.display = tipoSel === 'vendedor' ? 'block' : 'none'
   })
   opt.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') opt.click() })
 })
@@ -67,8 +109,12 @@ function redirigirPostLogin(tipo) {
   sessionStorage.removeItem('redirect_after_login')
   if (destino) {
     window.location.href = destino
+  } else if (tipo === 'vendedor') {
+    window.location.href = 'vendedor.php'
+  } else if (tipo === 'admin') {
+    window.location.href = 'admin.php'
   } else {
-    window.location.href = tipo === 'vendedor' ? 'vendedor.php' : 'index.php'
+    window.location.href = 'catalogo.php'
   }
 }
 
@@ -89,7 +135,7 @@ document.getElementById('btn-login')?.addEventListener('click', async () => {
   const data = await res.json()
 
   if (data.error) {
-    toast(data.error, 'err')
+    toast('Email o contraseña incorrectos', 'err')
     btn.disabled = false; btn.textContent = 'Iniciar Sesión'
     return
   }
@@ -132,9 +178,10 @@ document.getElementById('btn-registro')?.addEventListener('click', async () => {
 // ── Enter para enviar ──
 document.addEventListener('keydown', e => {
   if (e.key !== 'Enter') return
-  if (document.getElementById('panel-login').classList.contains('on')) {
-    document.getElementById('btn-login').click()
-  } else {
-    document.getElementById('btn-registro').click()
-  }
+  const panelLogin    = document.getElementById('panel-login')
+  const panelReg      = document.getElementById('panel-registro')
+  const panelRecuperar = document.getElementById('panel-recuperar')
+  if (panelLogin?.classList.contains('on'))     document.getElementById('btn-login').click()
+  else if (panelReg?.classList.contains('on'))  document.getElementById('btn-registro').click()
+  else if (panelRecuperar?.classList.contains('on')) document.getElementById('btn-recuperar').click()
 })
