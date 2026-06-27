@@ -37,71 +37,62 @@ if ($action === 'crear' && $method === 'POST') {
         $body['email_comprador']  ?? null,
     ]);
 
-    $pedido = $db->prepare('SELECT * FROM pedidos WHERE id = ?');
-    $pedido->execute([$id]);
-    $result = $pedido->fetch();
+    $stmt = $db->prepare('SELECT * FROM pedidos WHERE id = ?');
+    $stmt->execute([$id]);
+    $result         = $stmt->fetch();
     $result['items'] = json_decode($result['items'], true);
-
     json_response($result);
 }
 
-// ── OBT PEDIDOS DEL COMPRADOR ──
+// ── PEDIDOS DEL COMPRADOR ──
 if ($action === 'mis_pedidos' && $method === 'GET') {
     if (!isset($_SESSION['user_id'])) json_response(['error' => 'No autorizado'], 401);
 
     $db   = getDB();
     $stmt = $db->prepare('
-        SELECT * FROM pedidos
-        WHERE comprador_id = ?
-        ORDER BY created_at DESC
+        SELECT * FROM pedidos WHERE comprador_id = ? ORDER BY created_at DESC
     ');
     $stmt->execute([$_SESSION['user_id']]);
     $pedidos = $stmt->fetchAll();
-
-    foreach ($pedidos as &$p) {
-        $p['items'] = json_decode($p['items'], true);
-    }
-
+    foreach ($pedidos as &$p) $p['items'] = json_decode($p['items'], true);
     json_response($pedidos);
 }
 
-// ── OBT PEDIDOS DEL VENDEDOR ──
+// ── PEDIDOS DEL VENDEDOR ──
 if ($action === 'del_vendedor' && $method === 'GET') {
     if (!isset($_SESSION['user_id'])) json_response(['error' => 'No autorizado'], 401);
 
     $db   = getDB();
     $stmt = $db->prepare('
-        SELECT * FROM pedidos
-        WHERE vendedor_id = ?
-        ORDER BY created_at DESC
+        SELECT * FROM pedidos WHERE vendedor_id = ? ORDER BY created_at DESC
     ');
     $stmt->execute([$_SESSION['user_id']]);
     $pedidos = $stmt->fetchAll();
-
-    foreach ($pedidos as &$p) {
-        $p['items'] = json_decode($p['items'], true);
-    }
-
+    foreach ($pedidos as &$p) $p['items'] = json_decode($p['items'], true);
     json_response($pedidos);
 }
 
-// ── ACTUALIZAR ESTADO ──
+// ── CAMBIAR ESTADO ──
 if ($action === 'estado' && $method === 'POST') {
     if (!isset($_SESSION['user_id'])) json_response(['error' => 'No autorizado'], 401);
 
     $body   = get_body();
     $id     = $body['id']     ?? '';
     $estado = $body['estado'] ?? '';
-
     if (!$id || !$estado) json_response(['error' => 'Faltan campos'], 400);
 
     $db = getDB();
-    $db->prepare('
-        UPDATE pedidos SET estado = ?
-        WHERE id = ? AND vendedor_id = ?
-    ')->execute([$estado, $id, $_SESSION['user_id']]);
-
+    $db->prepare('UPDATE pedidos SET estado = ? WHERE id = ? AND vendedor_id = ?')
+       ->execute([$estado, $id, $_SESSION['user_id']]);
     json_response(['ok' => true]);
+}
+
+// ── CONTAR ENTREGADOS (para stats del home) ──
+if ($action === 'contar_entregados' && $method === 'GET') {
+    $db   = getDB();
+    $stmt = $db->query('SELECT COUNT(*) AS total FROM pedidos WHERE estado = "entregado"');
+    $row  = $stmt->fetch();
+    json_response(['count' => (int)$row['total']]);
 }
 
 json_response(['error' => 'Acción no encontrada'], 404);
