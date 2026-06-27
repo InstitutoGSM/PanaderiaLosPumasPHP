@@ -1,66 +1,42 @@
 <?php
-require_once '../config.php';
+require_once __DIR__ . '/../config.php';
 
-$method = $_SERVER['REQUEST_METHOD'];
-$action = $_GET['action'] ?? '';
+if (empty($_SESSION['user_id'])) jsonOut(['error' => 'No autenticado'], 401);
 
-if ($method === 'OPTIONS') json_response(['ok' => true]);
+// Verificar que sea admin
+$stmt = getDB()->prepare("SELECT tipo FROM profiles WHERE id = ? LIMIT 1");
+$stmt->execute([$_SESSION['user_id']]);
+$p = $stmt->fetch();
+if (!$p || $p['tipo'] !== 'admin') jsonOut(['error' => 'No autorizado'], 403);
 
-// Helper: verificar que el usuario logueado sea admin
-function checkAdmin() {
-    if (!isset($_SESSION['user_id'])) json_response(['error' => 'No autorizado'], 401);
-    $db   = getDB();
-    $stmt = $db->prepare('SELECT tipo FROM profiles WHERE id = ?');
-    $stmt->execute([$_SESSION['user_id']]);
-    $p = $stmt->fetch();
-    if (!$p || $p['tipo'] !== 'admin') json_response(['error' => 'Acceso denegado'], 403);
-}
+$input  = json_decode(file_get_contents('php://input'), true);
+$action = $input['action'] ?? '';
+$vid    = $input['vendedor_id'] ?? '';
 
-// ── LISTAR VENDEDORES ──
-if ($action === 'vendedores' && $method === 'GET') {
-    checkAdmin();
-    $db   = getDB();
-    $stmt = $db->query('
-        SELECT p.*, u.email
-        FROM profiles p
-        LEFT JOIN usuarios u ON u.id = p.id
-        WHERE p.tipo = "vendedor"
-        ORDER BY p.created_at DESC
-    ');
-    json_response($stmt->fetchAll());
-}
+try {
+    switch ($action) {
+        case 'aprobar':
+            getDB()->prepare("UPDATE profiles SET estado_verificacion='aprobado' WHERE id=?")
+                   ->execute([$vid]);
+            jsonOut(['ok' => true]);
+            break;
 
-// ── CAMBIAR ESTADO DE VERIFICACIÓN ──
-if ($action === 'cambiar_estado' && $method === 'POST') {
-    checkAdmin();
-    $body   = get_body();
-    $vid    = $body['vendedor_id'] ?? '';
-    $estado = $body['estado']      ?? '';
+        case 'rechazar':
+            getDB()->prepare("UPDATE profiles SET estado_verificacion='rechazado' WHERE id=?")
+                   ->execute([$vid]);
+            jsonOut(['ok' => true]);
+            break;
 
-    if (!$vid || !in_array($estado, ['pendiente', 'aprobado', 'rechazado'])) {
-        json_response(['error' => 'Datos inválidos'], 400);
+        case 'pedir_correccion':
+            getDB()->prepare("UPDATE profiles SET estado_verificacion='pendiente' WHERE id=?")
+                   ->execute([$vid]);
+            // En producción acá iría el envío de email con el mensaje
+            jsonOut(['ok' => true]);
+            break;
+
+        default:
+            jsonOut(['error' => 'Acción desconocida'], 400);
     }
-
-    $db = getDB();
-    $db->prepare('UPDATE profiles SET estado_verificacion = ? WHERE id = ? AND tipo = "vendedor"')
-       ->execute([$estado, $vid]);
-    json_response(['ok' => true]);
+} catch (Exception $e) {
+    jsonOut(['error' => $e->getMessage()], 500);
 }
-
-// ── STATS ──
-if ($action === 'stats' && $method === 'GET') {
-    checkAdmin();
-    $db = getDB();
-    $row = $db->query('
-        SELECT
-          SUM(estado_verificacion = "pendiente")  AS pendientes,
-          SUM(estado_verificacion = "aprobado")   AS aprobados,
-          SUM(estado_verificacion = "rechazado")  AS rechazados,
-          COUNT(*)                                AS total
-        FROM profiles WHERE tipo = "vendedor"
-    ')->fetch();
-    json_response($row);
-}
-
-json_response(['error' => 'Acción no encontrada'], 404);
-?>

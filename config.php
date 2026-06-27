@@ -4,37 +4,28 @@ define('DB_PORT', '1107');
 define('DB_NAME', 'panaderia');
 define('DB_USER', 'root');
 define('DB_PASS', '');
-define('APP_NAME', 'PanaderiaMarket');
 
-function getDB() {
+function getDB(): PDO {
     static $pdo = null;
-    if ($pdo === null) {
-        $pdo = new PDO(
-            'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4',
-            DB_USER,
-            DB_PASS,
-            [
-                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            ]
-        );
-    }
+    if ($pdo !== null) return $pdo;
+    $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT
+         . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+    $pdo = new PDO($dsn, DB_USER, DB_PASS, [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES   => false,
+    ]);
     return $pdo;
 }
 
-function json_response($data, $code = 200) {
-    http_response_code($code);
-    header('Content-Type: application/json');
-    header('Access-Control-Allow-Origin: *');
-    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, Authorization');
-    echo json_encode($data);
+function jsonOut(array $data, int $status = 200): void {
+    http_response_code($status);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($data, JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-function get_body() {
-    return json_decode(file_get_contents('php://input'), true) ?? [];
+//sesion PHP en todos los archivos que incluyan config
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
-
-session_start();
-?>

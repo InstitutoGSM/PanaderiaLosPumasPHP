@@ -1,53 +1,37 @@
 <?php
-require_once '../config.php';
+// Guarda los ultimos 4 dígitos de tarjeta (nunca el num completo).
+require_once __DIR__ . '/../config.php';
 
-$method = $_SERVER['REQUEST_METHOD'];
-$action = $_GET['action'] ?? '';
+if (empty($_SESSION['user_id'])) jsonOut(['error' => 'No autenticado'], 401);
 
-if ($method === 'OPTIONS') json_response(['ok' => true]);
+$input = json_decode(file_get_contents('php://input'), true);
+$action = $input['action'] ?? '';
 
-// ── GET TARJETA ──
-if ($action === 'get' && $method === 'GET') {
-    if (!isset($_SESSION['user_id'])) json_response(['error' => 'No autorizado'], 401);
+try {
+    $pdo = getDB();
 
-    $db   = getDB();
-    $stmt = $db->prepare('SELECT * FROM tarjetas WHERE user_id = ? LIMIT 1');
-    $stmt->execute([$_SESSION['user_id']]);
-    $tarjeta = $stmt->fetch();
+    if ($action === 'guardar') {
+        $ultimos4 = preg_replace('/\D/', '', $input['ultimos_4'] ?? '');
+        $tipo     = $input['tipo'] ?? 'desconocida';
+        if (strlen($ultimos4) !== 4) jsonOut(['error' => 'Últimos 4 dígitos inválidos']);
 
-    if (!$tarjeta) json_response(['error' => 'No hay tarjeta guardada'], 404);
-    json_response($tarjeta);
+        // Upsert: 1 tarjeta por usuario
+        $stmt = $pdo->prepare("SELECT id FROM tarjetas WHERE user_id = ? LIMIT 1");
+        $stmt->execute([$_SESSION['user_id']]);
+        $existing = $stmt->fetch();
+
+        if ($existing) {
+            $pdo->prepare("UPDATE tarjetas SET ultimos_4=?, numero_enmascarado=?, tipo=? WHERE user_id=?")
+                ->execute(["•••• •••• •••• $ultimos4", "•••• •••• •••• $ultimos4", $tipo, $_SESSION['user_id']]);
+        } else {
+            $id = bin2hex(random_bytes(16));
+            $pdo->prepare("INSERT INTO tarjetas (id,user_id,numero_enmascarado,ultimos_4,tipo) VALUES (?,?,?,?,?)")
+                ->execute([$id, $_SESSION['user_id'], "•••• •••• •••• $ultimos4", $ultimos4, $tipo]);
+        }
+        jsonOut(['ok' => true]);
+    }
+
+    jsonOut(['error' => 'Acción desconocida'], 400);
+} catch (Exception $e) {
+    jsonOut(['error' => $e->getMessage()], 500);
 }
-
-// ── GUARDAR TARJETA ──
-if ($action === 'guardar' && $method === 'POST') {
-    if (!isset($_SESSION['user_id'])) json_response(['error' => 'No autorizado'], 401);
-
-    $body    = get_body();
-    $masked  = $body['numero_enmascarado'] ?? '';
-    $ultimos = $body['ultimos_4']          ?? '';
-    $tipo    = $body['tipo']               ?? null;
-
-    if (!$masked || !$ultimos) json_response(['error' => 'Faltan datos'], 400);
-
-    $db = getDB();
-    $db->prepare('
-        INSERT INTO tarjetas (id, user_id, numero_enmascarado, ultimos_4, tipo)
-        VALUES (?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-          numero_enmascarado = VALUES(numero_enmascarado),
-          ultimos_4          = VALUES(ultimos_4),
-          tipo               = VALUES(tipo)
-    ')->execute([
-        bin2hex(random_bytes(16)),
-        $_SESSION['user_id'],
-        $masked,
-        $ultimos,
-        $tipo
-    ]);
-
-    json_response(['ok' => true]);
-}
-
-json_response(['error' => 'Acción no encontrada'], 404);
-?>
