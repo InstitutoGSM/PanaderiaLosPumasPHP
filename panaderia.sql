@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1:1107
--- Tiempo de generación: 10-06-2026 a las 15:44:40
+-- Tiempo de generación: 26-06-2026 a las 20:15:18
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -85,7 +85,8 @@ CREATE TABLE `pedidos` (
 --
 
 INSERT INTO `pedidos` (`id`, `comprador_id`, `vendedor_id`, `items`, `total`, `estado`, `direccion`, `codigo_postal`, `notas`, `medio_pago`, `nombre_comprador`, `email_comprador`, `ticket_id`, `created_at`) VALUES
-('43c603cc2bbfccd01ac6e6e597743d40', '04e6b2a1def5160b6d45ca8bc5fc097b', '96b0f339f3cf5766c1a9a9be97d0c42f', '[{\"nombre\":\"Pan frances\",\"cantidad\":1,\"precio\":\"1000.00\",\"variante\":\"unidad\"}]', 1000.00, 'pendiente', 'dadd', '4709', 'sin migajas', 'efectivo', 'Aparicio Leandro', 'leandroaparicio@gmail.com', 'TK-97743D40-6CAD', '2026-06-09 18:46:14');
+('43c603cc2bbfccd01ac6e6e597743d40', '04e6b2a1def5160b6d45ca8bc5fc097b', '96b0f339f3cf5766c1a9a9be97d0c42f', '[{\"nombre\":\"Pan frances\",\"cantidad\":1,\"precio\":\"1000.00\",\"variante\":\"unidad\"}]', 1000.00, 'pendiente', 'dadd', '4709', 'sin migajas', 'efectivo', 'Aparicio Leandro', 'leandroaparicio@gmail.com', 'TK-97743D40-6CAD', '2026-06-09 18:46:14'),
+('e64b40f4e2cf5af71ffe62add6613e32', '04e6b2a1def5160b6d45ca8bc5fc097b', '96b0f339f3cf5766c1a9a9be97d0c42f', '[{\"nombre\":\"Pan frances\",\"cantidad\":1,\"precio\":\"1000.00\",\"variante\":\"unidad\"}]', 1000.00, 'confirmado', NULL, '4709', NULL, 'efectivo', 'Aparicio Leandro', 'leandroaparicio@gmail.com', 'TK-D6613E32-B771', '2026-06-19 15:05:52');
 
 -- --------------------------------------------------------
 
@@ -162,6 +163,7 @@ CREATE TABLE `profiles` (
 
 INSERT INTO `profiles` (`id`, `nombre`, `tipo`, `nombre_panaderia`, `descripcion`, `avatar_url`, `instagram`, `telefono`, `email_contacto`, `banner_anuncio`, `es_nuevo_vendedor`, `created_at`, `cbu`, `alias_cbu`, `titular_cuenta`, `medios_pago`) VALUES
 ('04e6b2a1def5160b6d45ca8bc5fc097b', 'Aparicio Leandro', 'comprador', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2026-06-05 15:46:41', NULL, NULL, NULL, NULL),
+('2777e4293bacac77be5348d8a4d2b4bf', 'agus', 'comprador', NULL, NULL, 'assets/avatares/2777e4293bacac77be5348d8a4d2b4bf_1781288343.png', NULL, NULL, NULL, NULL, 1, '2026-06-12 15:18:25', NULL, NULL, NULL, NULL),
 ('96b0f339f3cf5766c1a9a9be97d0c42f', 'Elizondo Cesar', 'vendedor', 'Los Pumas', 'Somos la panaderia Central!', 'assets/avatares/96b0f339f3cf5766c1a9a9be97d0c42f_1781041479.png', 'sin_instagram', '3834533344', 'panaderialospumas@gmail.com', 'Descuento del 10% en migajas', 1, '2026-06-05 15:48:26', '1234567891011121314151', 'panaderia.puma', 'Elizondo Cesar', '[\"efectivo\",\"transferencia\"]');
 
 -- --------------------------------------------------------
@@ -198,6 +200,7 @@ CREATE TABLE `usuarios` (
 
 INSERT INTO `usuarios` (`id`, `email`, `password`, `created_at`) VALUES
 ('04e6b2a1def5160b6d45ca8bc5fc097b', 'leandroaparicio@gmail.com', '$2y$10$wJvFbl2B2xYLfaWUiprUduKy6NfbX1wdPd8dYFbRDoxc2RW4u8SIe', '2026-06-05 15:46:41'),
+('2777e4293bacac77be5348d8a4d2b4bf', 'agus@gmail.com', '$2y$10$WnKjJHWoYlIjJaO/A28SO.og6fkFj6YQz152d7bFWlJzWPZ.8E8cC', '2026-06-12 15:18:25'),
 ('96b0f339f3cf5766c1a9a9be97d0c42f', 'lospumas@gmail.com', '$2y$10$d9xI6Zwbm0vjRciW9JoDVuyKrJbx1Qt58uYpdyAPcY4UFNeA9Pab6', '2026-06-05 15:48:26');
 
 --
