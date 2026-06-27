@@ -1,106 +1,24 @@
-<?php require_once 'config.php'; ?>
+<?php
+session_start();
+if (!isset($_SESSION['user_id']) || $_SESSION['tipo'] !== 'vendedor') {
+    header('Location: login.php');
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="es">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mi Panel — Panaderia Los Pumas</title>
+  <title>Mi Panel — PanaderiaMarket</title>
   <link rel="stylesheet" href="css/global.css">
   <link rel="stylesheet" href="css/vendedor.css">
-  <style>
-    html,
-    body {
-      overflow-x: hidden;
-    }
-
-    .onboarding {
-      background: linear-gradient(135deg, var(--marron) 0%, var(--marron-mid) 100%);
-      border-radius: var(--radio-lg);
-      padding: 32px;
-      color: white;
-      margin-bottom: 28px;
-      display: none;
-      position: relative;
-    }
-
-    .onboarding h2 {
-      color: white;
-      margin-bottom: 8px;
-      font-size: 1.4rem;
-    }
-
-    .onboarding p {
-      opacity: 0.8;
-      margin-bottom: 20px;
-      font-size: 0.95rem;
-    }
-
-    .ob-steps {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-
-    .ob-step {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: var(--radio);
-      padding: 16px;
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-    }
-
-    .ob-step-ico {
-      font-size: 1.6rem;
-      flex-shrink: 0;
-    }
-
-    .ob-step-txt strong {
-      display: block;
-      font-size: 0.9rem;
-      margin-bottom: 2px;
-    }
-
-    .ob-step-txt span {
-      font-size: 0.78rem;
-      opacity: 0.75;
-    }
-
-    .ob-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .ob-cerrar {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      background: none;
-      border: none;
-      color: rgba(255, 255, 255, 0.6);
-      font-size: 1.2rem;
-      cursor: pointer;
-    }
-
-    .ob-cerrar:hover {
-      color: white;
-    }
-
-    /* Ocultar mob-menu por defecto, CSS lo muestra en mobile */
-    .mob-menu-btn {
-      display: none;
-    }
-  </style>
 </head>
 
 <body>
-
   <div class="dash-layout">
 
-    <!-- SIDEBAR -->
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
     <nav class="sidebar" id="sidebar" aria-label="Menú del panel">
       <div class="sidebar-logo">🥖 Panaderia<span>PUMA</span></div>
@@ -125,9 +43,9 @@
             <span class="nav-ico">📦</span> Pedidos
             <span id="badge-pedidos"
               style="display:none;background:var(--rojo);color:white;
-                       border-radius:50%;width:18px;height:18px;font-size:0.7rem;
-                       font-weight:700;align-items:center;justify-content:center;
-                       margin-left:auto">0</span>
+                     border-radius:50%;width:18px;height:18px;font-size:0.7rem;
+                     font-weight:700;align-items:center;justify-content:center;
+                     margin-left:auto">0</span>
           </a>
         </li>
         <li>
@@ -135,11 +53,25 @@
             <span class="nav-ico">⚙️</span> Mi Perfil
           </a>
         </li>
+        <li>
+          <a href="#" class="nav-link" data-sec="documentos">
+            <span class="nav-ico">📂</span> Mis Documentos
+            <span id="badge-docs"
+              style="display:none;background:var(--naranja);
+                     color:white;border-radius:50%;width:8px;height:8px;
+                     margin-left:auto"></span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="nav-link" data-sec="sucursales">
+            <span class="nav-ico">🏪</span> Sucursales
+          </a>
+        </li>
       </ul>
       <div class="sidebar-bottom">
         <ul class="sidebar-nav">
           <li>
-            <a href="index.php" target="_blank">
+            <a href="catalogo.php" target="_blank">
               <span class="nav-ico">🏪</span> Ver mi tienda
             </a>
           </li>
@@ -152,14 +84,11 @@
       </div>
     </nav>
 
-    <!-- MAIN -->
     <main class="dash-main">
 
-      <!-- Topbar -->
       <div class="dash-topbar">
         <div style="display:flex;align-items:center;gap:10px">
-          <button class="btn btn-ghost btn-sm mob-menu-btn" id="mob-menu"
-            aria-label="Abrir menú">☰</button>
+          <button class="btn btn-ghost btn-sm mob-menu-btn" id="mob-menu" aria-label="Abrir menú">☰</button>
           <div>
             <h1 id="dash-titulo">Mi Panel</h1>
             <p id="dash-sub" style="color:var(--gris);font-size:0.9rem;margin-top:2px">
@@ -198,18 +127,14 @@
           </div>
         </div>
         <div class="ob-actions">
-          <button class="btn btn-naranja btn-sm" id="ob-ir-perfil">
-            Completar perfil →
-          </button>
+          <button class="btn btn-naranja btn-sm" id="ob-ir-perfil">Completar perfil →</button>
           <button class="btn btn-ghost btn-sm"
             style="border-color:rgba(255,255,255,0.4);color:white"
-            id="ob-ir-agregar">
-            Agregar producto →
-          </button>
+            id="ob-ir-agregar">Agregar producto →</button>
         </div>
       </div>
 
-      <!-- INICIO -->
+      <!-- SECCIÓN: INICIO -->
       <section id="sec-inicio">
         <div class="stats-grid">
           <div class="stat-card">
@@ -226,23 +151,19 @@
           </div>
         </div>
         <div class="sec-card">
-          <div class="sec-card-top">
-            <h2>Últimos pedidos</h2>
-          </div>
+          <div class="sec-card-top"><h2>Últimos pedidos</h2></div>
           <div id="ultimos-pedidos">
             <p style="color:var(--gris)">Cargando...</p>
           </div>
         </div>
       </section>
 
-      <!-- MIS PRODUCTOS -->
+      <!-- SECCIÓN: MIS PRODUCTOS -->
       <section id="sec-productos" style="display:none">
         <div class="sec-card">
           <div class="sec-card-top">
             <h2>Mis Productos</h2>
-            <button class="btn btn-naranja btn-sm" id="btn-ir-agregar">
-              + Nuevo
-            </button>
+            <button class="btn btn-naranja btn-sm" id="btn-ir-agregar">+ Nuevo</button>
           </div>
           <div class="tabla-wrap">
             <table class="tabla" aria-label="Mis productos">
@@ -258,8 +179,7 @@
               </thead>
               <tbody id="tbody-productos">
                 <tr>
-                  <td colspan="6"
-                    style="text-align:center;padding:32px;color:var(--gris)">
+                  <td colspan="6" style="text-align:center;padding:32px;color:var(--gris)">
                     Cargando...
                   </td>
                 </tr>
@@ -269,14 +189,14 @@
         </div>
       </section>
 
-      <!-- AGREGAR / EDITAR -->
+      <!-- SECCIÓN: AGREGAR / EDITAR PRODUCTO -->
       <section id="sec-agregar" style="display:none">
         <div class="sec-card" style="max-width:680px">
           <div class="sec-card-top">
             <h2 id="form-titulo">➕ Agregar Producto</h2>
-            <button class="btn btn-ghost btn-sm" id="btn-cancelar"
-              style="display:none">Cancelar</button>
+            <button class="btn btn-ghost btn-sm" id="btn-cancelar" style="display:none">Cancelar</button>
           </div>
+
           <input type="hidden" id="edit-id">
 
           <div class="form-row">
@@ -321,14 +241,13 @@
             <div class="field">
               <label for="p-precio">
                 <span id="label-precio-completo">Precio *</span>
-                <span id="label-precio-hint"
-                  style="font-weight:400;color:var(--gris)">(por unidad)</span>
+                <span id="label-precio-hint" style="font-weight:400;color:var(--gris)">(por unidad)</span>
               </label>
               <input type="number" id="p-precio" placeholder="0" min="0" step="50">
               <div id="hint-kilo"
                 style="display:none;margin-top:6px;font-size:0.78rem;
-                        background:var(--crema);padding:7px 11px;
-                        border-radius:8px;color:var(--marron-mid)">
+                       background:var(--crema);padding:7px 11px;
+                       border-radius:8px;color:var(--marron-mid)">
                 💡 Ej: ponés <strong>$2.500</strong> → 1kg = $2.500
               </div>
             </div>
@@ -337,13 +256,11 @@
           <div class="form-row" id="campos-docena">
             <div class="field">
               <label for="p-media-doc">Precio media docena</label>
-              <input type="number" id="p-media-doc" placeholder="Opcional"
-                min="0" step="50">
+              <input type="number" id="p-media-doc" placeholder="Opcional" min="0" step="50">
             </div>
             <div class="field">
               <label for="p-docena">Precio por docena</label>
-              <input type="number" id="p-docena" placeholder="Opcional"
-                min="0" step="50">
+              <input type="number" id="p-docena" placeholder="Opcional" min="0" step="50">
             </div>
           </div>
 
@@ -375,8 +292,7 @@
               style="cursor:pointer;display:inline-flex">
               📁 Agregar más fotos
             </label>
-            <input type="file" id="p-fotos-extra"
-              accept="image/*" multiple style="display:none">
+            <input type="file" id="p-fotos-extra" accept="image/*" multiple style="display:none">
             <span style="font-size:0.78rem;color:var(--gris);margin-left:10px">
               Hasta 4 fotos
             </span>
@@ -392,19 +308,44 @@
         </div>
       </section>
 
-      <!-- PEDIDOS -->
+      <!-- SECCIÓN: PEDIDOS -->
       <section id="sec-pedidos" style="display:none">
         <div class="sec-card">
           <div class="sec-card-top">
             <h2>📦 Pedidos recibidos</h2>
           </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px" id="filtros-pedidos">
+            <button class="filtro on" data-estado="todos">Todos</button>
+            <button class="filtro" data-estado="pendiente">Pendiente</button>
+            <button class="filtro" data-estado="confirmado">Confirmado</button>
+            <button class="filtro" data-estado="listo">Listo</button>
+            <button class="filtro" data-estado="entregado">Entregado</button>
+          </div>
+          <div style="max-width:320px;margin-bottom:16px">
+            <input type="search" id="buscar-pedidos"
+              placeholder="Buscar por ticket o nombre del comprador...">
+          </div>
           <div id="lista-pedidos">
             <p style="color:var(--gris)">Cargando...</p>
+          </div>
+          <div id="empty-pedidos"
+            style="display:none;text-align:center;padding:40px 0;color:var(--gris)">
+            No hay pedidos que coincidan con el filtro.
           </div>
         </div>
       </section>
 
-      <!-- PERFIL -->
+      <!-- SECCIÓN: SUCURSALES -->
+      <section id="sec-sucursales" style="display:none">
+        <div class="sec-card">
+          <div class="sec-card-top">
+            <h2>🏪 Mis Sucursales</h2>
+          </div>
+          <div id="sucursales-content"></div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN: PERFIL -->
       <section id="sec-perfil" style="display:none">
         <div class="sec-card perfil-wrap">
           <div class="sec-card-top">
@@ -414,19 +355,18 @@
           <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px">
             <div id="avatar-preview"
               style="width:80px;height:80px;border-radius:50%;
-                      background:var(--naranja);display:flex;
-                      align-items:center;justify-content:center;
-                      font-size:1.8rem;font-weight:900;color:white;
-                      flex-shrink:0;overflow:hidden;
-                      border:3px solid var(--crema-dark)">
+                     background:var(--naranja);display:flex;
+                     align-items:center;justify-content:center;
+                     font-size:1.8rem;font-weight:900;color:white;
+                     flex-shrink:0;overflow:hidden;
+                     border:3px solid var(--crema-dark)">
             </div>
             <div>
               <label for="pf-avatar-file" class="btn btn-ghost btn-sm"
                 style="cursor:pointer;display:inline-flex">
                 📷 Cambiar foto de perfil
               </label>
-              <input type="file" id="pf-avatar-file"
-                accept="image/*" style="display:none">
+              <input type="file" id="pf-avatar-file" accept="image/*" style="display:none">
               <p style="font-size:0.78rem;color:var(--gris);margin-top:6px">
                 JPG o PNG — máx 2MB
               </p>
@@ -450,9 +390,7 @@
           <div class="field">
             <label for="pf-banner">
               📢 Banner de anuncio
-              <span style="font-weight:400;color:var(--gris)">
-                (aparece en tu tienda)
-              </span>
+              <span style="font-weight:400;color:var(--gris)">(aparece en tu tienda)</span>
             </label>
             <input type="text" id="pf-banner"
               placeholder="Ej: ¡Esta semana 10% off en medialunas! 🥐"
@@ -480,49 +418,168 @@
             <input type="email" id="pf-email">
           </div>
 
-          <div style="height:1px;background:var(--crema-dark);margin:20px 0"></div>
-          <h3 style="font-family:'Playfair Display',serif;margin-bottom:16px">
-            💳 Medios de pago aceptados
-          </h3>
+          <div class="checkout-sep"
+            style="height:1px;background:var(--crema-dark);margin:22px 0"></div>
 
-          <div class="field">
-            <label>¿Qué medios de pago aceptás?</label>
-            <div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:8px">
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600">
-                <input type="checkbox" id="mp-efectivo" value="efectivo"> 💵 Efectivo
-              </label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600">
-                <input type="checkbox" id="mp-transferencia" value="transferencia"> 📲 Transferencia
-              </label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600">
-                <input type="checkbox" id="mp-debito" value="debito"> 💳 Débito
-              </label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600">
-                <input type="checkbox" id="mp-credito" value="credito"> 💳 Crédito
-              </label>
-            </div>
+          <h3 style="margin-bottom:6px">💳 Medios de pago que aceptás</h3>
+          <p class="medios-pago-hint">
+            El efectivo siempre está disponible para tus compradores.
+            Activá los demás que aceptes.
+          </p>
+
+          <div class="medios-pago-grid">
+            <label class="medio-check on" style="cursor:not-allowed;opacity:0.75">
+              <input type="checkbox" checked disabled>
+              <span class="medio-ico">💵</span> Efectivo
+            </label>
+            <label class="medio-check" id="lbl-pago-transferencia">
+              <input type="checkbox" id="pf-pago-transferencia">
+              <span class="medio-ico">📲</span> Transferencia
+            </label>
+            <label class="medio-check" id="lbl-pago-debito">
+              <input type="checkbox" id="pf-pago-debito">
+              <span class="medio-ico">💳</span> Débito
+            </label>
+            <label class="medio-check" id="lbl-pago-credito">
+              <input type="checkbox" id="pf-pago-credito">
+              <span class="medio-ico">💳</span> Crédito
+            </label>
           </div>
 
-          <div id="campos-transferencia" style="display:none;margin-top:4px">
+          <div id="pf-transferencia-datos" style="display:none;margin-top:16px">
             <div class="field">
               <label for="pf-cbu">CBU</label>
-              <input type="text" id="pf-cbu" placeholder="22 dígitos" maxlength="22">
+              <input type="text" id="pf-cbu"
+                placeholder="0000003100000000000000"
+                maxlength="22" inputmode="numeric">
             </div>
-            <div class="field">
-              <label for="pf-alias">Alias</label>
-              <input type="text" id="pf-alias" placeholder="Ej: panaderia.puma">
+            <div class="form-row">
+              <div class="field">
+                <label for="pf-alias">Alias</label>
+                <input type="text" id="pf-alias" placeholder="mi.alias.mp">
+              </div>
+              <div class="field">
+                <label for="pf-titular">Titular de la cuenta</label>
+                <input type="text" id="pf-titular" placeholder="Nombre completo">
+              </div>
             </div>
-            <div class="field">
-              <label for="pf-titular">Titular de la cuenta</label>
-              <input type="text" id="pf-titular" placeholder="Nombre del titular">
+            <div style="font-size:0.78rem;color:var(--gris);
+                        margin-top:-6px;margin-bottom:10px">
+              Ingresá al menos el CBU o el alias para que los compradores puedan transferirte.
             </div>
           </div>
+
+          <div class="checkout-sep"
+            style="height:1px;background:var(--crema-dark);margin:22px 0"></div>
 
           <button class="btn btn-marron" id="btn-guardar-perfil">
             Guardar cambios
           </button>
         </div>
       </section>
+
+      <!-- SECCIÓN: DOCUMENTOS -->
+      <section id="sec-documentos" style="display:none">
+        <div class="sec-card" style="max-width:680px">
+          <div class="sec-card-top">
+            <h2>📂 Mis Documentos</h2>
+          </div>
+
+          <div id="doc-estado-wrap" style="margin-bottom:24px"></div>
+
+          <p style="font-size:0.88rem;color:var(--gris);margin-bottom:20px;line-height:1.7">
+            Para poder vender en PanaderiaMarket necesitás subir los siguientes
+            documentos obligatorios. Una vez enviados, el equipo de administración
+            los revisará y te notificará por email.
+          </p>
+
+          <!-- Doc 1: Bromatología -->
+          <div class="sec-card"
+            style="box-shadow:none;border:2px solid var(--crema-dark);margin-bottom:14px;padding:18px">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+              <span style="font-size:1.6rem">📋</span>
+              <div>
+                <div style="font-weight:700">Habilitación Bromatológica Municipal</div>
+                <div style="font-size:0.78rem;color:var(--gris)">
+                  Emitida por la Dirección de Calidad Alimentaria del Municipio de Catamarca
+                </div>
+              </div>
+              <span id="ico-doc-1" style="margin-left:auto;font-size:1.2rem"></span>
+            </div>
+            <div id="preview-doc-1" style="margin-bottom:10px"></div>
+            <label for="file-doc-1" class="btn btn-ghost btn-sm"
+              style="cursor:pointer;display:inline-flex">
+              📁 Subir archivo
+            </label>
+            <input type="file" id="file-doc-1" accept="image/*,.pdf" style="display:none">
+            <span style="font-size:0.75rem;color:var(--gris);margin-left:10px">
+              JPG, PNG o PDF — máx 5MB
+            </span>
+          </div>
+
+          <!-- Doc 2: Carnet Manipulador -->
+          <div class="sec-card"
+            style="box-shadow:none;border:2px solid var(--crema-dark);margin-bottom:14px;padding:18px">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+              <span style="font-size:1.6rem">🪪</span>
+              <div>
+                <div style="font-weight:700">Carnet de Manipulador de Alimentos</div>
+                <div style="font-size:0.78rem;color:var(--gris)">
+                  Emitido por la autoridad sanitaria municipal o provincial.
+                  Al menos 1 por establecimiento.
+                </div>
+              </div>
+              <span id="ico-doc-2" style="margin-left:auto;font-size:1.2rem"></span>
+            </div>
+            <div id="preview-doc-2" style="margin-bottom:10px"></div>
+            <label for="file-doc-2" class="btn btn-ghost btn-sm"
+              style="cursor:pointer;display:inline-flex">
+              📁 Subir archivo
+            </label>
+            <input type="file" id="file-doc-2" accept="image/*,.pdf" style="display:none">
+            <span style="font-size:0.75rem;color:var(--gris);margin-left:10px">
+              JPG, PNG o PDF — máx 5MB
+            </span>
+          </div>
+
+          <!-- Doc 3: Habilitación Comercial -->
+          <div class="sec-card"
+            style="box-shadow:none;border:2px solid var(--crema-dark);margin-bottom:20px;padding:18px">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+              <span style="font-size:1.6rem">🏪</span>
+              <div>
+                <div style="font-weight:700">Habilitación Comercial Municipal</div>
+                <div style="font-size:0.78rem;color:var(--gris)">
+                  Formulario Único de Habilitación Comercial del Municipio de Catamarca
+                </div>
+              </div>
+              <span id="ico-doc-3" style="margin-left:auto;font-size:1.2rem"></span>
+            </div>
+            <div id="preview-doc-3" style="margin-bottom:10px"></div>
+            <label for="file-doc-3" class="btn btn-ghost btn-sm"
+              style="cursor:pointer;display:inline-flex">
+              📁 Subir archivo
+            </label>
+            <input type="file" id="file-doc-3" accept="image/*,.pdf" style="display:none">
+            <span style="font-size:0.75rem;color:var(--gris);margin-left:10px">
+              JPG, PNG o PDF — máx 5MB
+            </span>
+          </div>
+
+          <button class="btn btn-naranja" id="btn-enviar-docs" disabled>
+            📤 Enviar documentos para revisión
+          </button>
+          <p style="font-size:0.75rem;color:var(--gris);margin-top:8px">
+            Una vez enviados, el equipo revisará tu documentación en un plazo de 24-48hs.
+          </p>
+        </div>
+      </section>
+
+      <footer style="text-align:center;padding:24px;font-size:0.8rem;color:var(--gris)">
+        <a href="terminos.php" style="color:var(--gris)">Términos y Condiciones</a> ·
+        <a href="privacidad.php" style="color:var(--gris)">Privacidad</a> ·
+        <a href="nosotros.php" style="color:var(--gris)">Sobre nosotros</a>
+      </footer>
 
     </main>
   </div>

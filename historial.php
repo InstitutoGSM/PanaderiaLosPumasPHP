@@ -1,93 +1,20 @@
+<?php
+session_start();
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mis Pedidos — Panaderia Los Pumas</title>
+  <title>Mis Pedidos — PanaderiaMarket</title>
   <link rel="stylesheet" href="css/global.css">
   <link rel="stylesheet" href="css/historial.css">
-  <style>
-    html,
-    body {
-      overflow-x: hidden;
-    }
-
-    .perfil-comprador {
-      background: var(--blanco);
-      border-radius: var(--radio-lg);
-      padding: 24px;
-      box-shadow: var(--sombra);
-      margin-bottom: 28px;
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-
-    .perfil-avatar {
-      width: 72px;
-      height: 72px;
-      border-radius: 50%;
-      background: var(--naranja);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Playfair Display', serif;
-      font-size: 1.6rem;
-      font-weight: 900;
-      flex-shrink: 0;
-      overflow: hidden;
-      border: 3px solid var(--crema-dark);
-    }
-
-    .perfil-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .perfil-info {
-      flex: 1;
-      min-width: 200px;
-    }
-
-    .perfil-nombre {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.3rem;
-      font-weight: 700;
-      margin-bottom: 2px;
-    }
-
-    .perfil-email {
-      font-size: 0.85rem;
-      color: var(--gris);
-    }
-
-    .perfil-acciones {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
-
-    .edit-perfil-form {
-      background: var(--crema);
-      border-radius: var(--radio-lg);
-      padding: 20px;
-      margin-top: 14px;
-      display: none;
-    }
-
-    .edit-perfil-form.open {
-      display: block;
-    }
-  </style>
 </head>
-
 <body>
-
   <nav class="navbar">
     <div class="navbar-inner">
       <a href="index.php" class="navbar-logo">
@@ -95,14 +22,13 @@
         Panaderia<span class="marca">PUMA</span>
       </a>
       <div class="navbar-actions">
-        <a href="index.php" class="btn btn-ghost btn-sm">← Volver</a>
+        <a href="catalogo.php" class="btn btn-ghost btn-sm">← Volver</a>
         <button id="nav-logout" class="btn btn-ghost btn-sm">Salir 🚪</button>
       </div>
     </div>
   </nav>
 
-  <main class="container" style="padding:36px 24px 60px">
-
+  <main class="container historial-main">
     <div class="perfil-comprador" id="perfil-wrap">
       <div class="skeleton" style="width:72px;height:72px;border-radius:50%;flex-shrink:0"></div>
       <div style="flex:1">
@@ -110,226 +36,27 @@
         <div class="skeleton" style="width:240px;height:14px"></div>
       </div>
     </div>
-
-    <h1 style="margin-bottom:6px">Mis Pedidos 📦</h1>
-    <p style="color:var(--gris);margin-bottom:28px">
-      Historial completo de tus compras
-    </p>
-
+    <h1 class="historial-titulo">Mis Pedidos 📦</h1>
+    <p class="historial-sub">Historial completo de tus compras</p>
     <div id="lista-historial">
       <div class="skeleton" style="height:120px;border-radius:var(--radio-lg);margin-bottom:14px"></div>
       <div class="skeleton" style="height:120px;border-radius:var(--radio-lg);margin-bottom:14px"></div>
       <div class="skeleton" style="height:120px;border-radius:var(--radio-lg)"></div>
     </div>
-
-    <div id="empty-historial"
-      style="display:none;text-align:center;padding:70px 0">
-      <div style="font-size:3.5rem">📦</div>
-      <h3 style="margin:14px 0 8px">Aún no hiciste pedidos</h3>
-      <p style="color:var(--gris);margin-bottom:20px">
-        Explorá las panaderías y hacé tu primera compra
-      </p>
-      <a href="index.php" class="btn btn-naranja">Ver productos</a>
+    <div id="empty-historial" class="historial-empty">
+      <div class="historial-empty-ico">📦</div>
+      <h3>Aún no hiciste pedidos</h3>
+      <p>Explorá las panaderías y hacé tu primera compra</p>
+      <a href="catalogo.php" class="btn btn-naranja">Ver productos</a>
     </div>
-
   </main>
 
+  <footer class="footer-legal">
+    <a href="terminos.php">Términos y Condiciones</a> ·
+    <a href="privacidad.php">Privacidad</a> ·
+    <a href="nosotros.php">Sobre nosotros</a>
+  </footer>
   <div id="toast-box"></div>
-
-  <script type="module">
-    import {
-      toast,
-      formatPrecio,
-      getIniciales
-    } from './js/utils.js'
-    import {
-      getUser,
-      logout
-    } from './js/auth.js'
-    import {
-      abrirTicket
-    } from './js/ticket.js'
-    import {
-      subirImagen
-    } from './js/upload.js'
-
-    document.getElementById('nav-logout').addEventListener('click', logout)
-
-    let currentUser = null
-
-    async function cargarPerfil(user) {
-      const res = await fetch(`api/profiles.php?action=get&id=${user.id}`)
-      const p = await res.json()
-
-      const nombreMostrar = p?.nombre || user.email?.split('@')[0] || 'Mi cuenta'
-      const wrap = document.getElementById('perfil-wrap')
-
-      wrap.innerHTML = `
-      <div class="perfil-avatar" id="hist-avatar">
-        ${p?.avatar_url
-          ? `<img src="${p.avatar_url}" alt="Foto de perfil">`
-          : getIniciales(nombreMostrar)}
-      </div>
-      <div class="perfil-info">
-        <div class="perfil-nombre">${nombreMostrar}</div>
-        <div class="perfil-email">${user.email}</div>
-        <div class="perfil-acciones">
-          <button class="btn btn-ghost btn-sm" id="btn-editar-perfil">
-            ✏️ Editar perfil
-          </button>
-          <label for="hist-avatar-file"
-                 class="btn btn-ghost btn-sm" style="cursor:pointer">
-            📷 Cambiar foto
-          </label>
-          <input type="file" id="hist-avatar-file"
-                 accept="image/*" style="display:none">
-        </div>
-        <div class="edit-perfil-form" id="edit-perfil-form">
-          <div class="field" style="margin-bottom:12px">
-            <label for="hist-nombre">Nombre completo</label>
-            <input type="text" id="hist-nombre"
-                   value="${p?.nombre || ''}" placeholder="Tu nombre">
-          </div>
-          <div style="display:flex;gap:10px">
-            <button class="btn btn-marron btn-sm" id="btn-guardar-perfil">
-              Guardar
-            </button>
-            <button class="btn btn-ghost btn-sm" id="btn-cancelar-perfil">
-              Cancelar
-            </button>
-          </div>
-        </div>
-      </div>
-    `
-
-      document.getElementById('btn-editar-perfil').addEventListener('click', () => {
-        document.getElementById('edit-perfil-form').classList.toggle('open')
-      })
-      document.getElementById('btn-cancelar-perfil').addEventListener('click', () => {
-        document.getElementById('edit-perfil-form').classList.remove('open')
-      })
-      document.getElementById('btn-guardar-perfil').addEventListener('click', async () => {
-        const nombre = document.getElementById('hist-nombre').value.trim()
-        if (!nombre) return
-        const res = await fetch('api/profiles.php?action=actualizar', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            nombre
-          })
-        })
-        const data = await res.json()
-        if (data.error) {
-          toast('Error al guardar', 'err');
-          return
-        }
-        toast('Perfil actualizado ✓', 'ok')
-        document.querySelector('.perfil-nombre').textContent = nombre
-        document.getElementById('edit-perfil-form').classList.remove('open')
-      })
-
-      document.getElementById('hist-avatar-file').addEventListener('change', async e => {
-        const file = e.target.files[0]
-        if (!file) return
-        if (file.size > 2 * 1024 * 1024) {
-          toast('Máx 2MB', 'err');
-          return
-        }
-        toast('Subiendo foto...', 'inf')
-        const url = await subirImagen(file, user.id, 'avatares')
-        if (!url) {
-          toast('Error al subir foto', 'err');
-          return
-        }
-        await fetch('api/profiles.php?action=actualizar', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            avatar_url: url
-          })
-        })
-        const avatarEl = document.getElementById('hist-avatar')
-        avatarEl.innerHTML = `<img src="${url}" alt="Foto de perfil">`
-        toast('Foto actualizada ✓', 'ok')
-      })
-    }
-
-    async function cargarPedidos(user) {
-      const res = await fetch('api/pedidos.php?action=mis_pedidos')
-      const data = await res.json()
-      const el = document.getElementById('lista-historial')
-      const empty = document.getElementById('empty-historial')
-
-      if (!Array.isArray(data) || data.length === 0) {
-        el.innerHTML = '';
-        empty.style.display = 'block';
-        return
-      }
-
-      el.innerHTML = data.map(p => `
-      <div class="historial-card" data-pedido-id="${p.id}">
-        <div class="historial-top">
-          <div>
-            <div class="historial-ticket">
-              ${p.ticket_id || '#' + p.id.slice(-8).toUpperCase()}
-            </div>
-            <div class="historial-fecha">
-              ${new Date(p.created_at).toLocaleString('es-AR')}
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <span class="estado-badge estado-${p.estado}">${p.estado}</span>
-            <strong style="color:var(--verde);font-size:1.1rem">
-              ${formatPrecio(p.total)}
-            </strong>
-          </div>
-        </div>
-        <div class="historial-items">
-          ${(p.items || []).map(i => `
-            <div class="historial-item">
-              <span>${i.nombre} × ${i.cantidad}</span>
-              <span style="font-weight:700">
-                ${formatPrecio(i.precio * i.cantidad)}
-              </span>
-            </div>
-          `).join('')}
-        </div>
-        <div class="historial-footer">
-          <div style="font-size:0.82rem;color:var(--gris)">
-            Pago: ${p.medio_pago || '—'}
-            ${p.direccion ? `· ${p.direccion}` : ''}
-          </div>
-          <button class="btn btn-ghost btn-sm btn-ticket" data-id="${p.id}">
-            🎫 Ver ticket
-          </button>
-        </div>
-      </div>
-    `).join('')
-
-      el.querySelectorAll('.btn-ticket').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const pedido = data.find(p => p.id === btn.dataset.id)
-          if (pedido) abrirTicket(pedido)
-        })
-      })
-    }
-
-    async function init() {
-      currentUser = await getUser()
-      if (!currentUser) {
-        location.href = 'login.php';
-        return
-      }
-      await cargarPerfil(currentUser)
-      await cargarPedidos(currentUser)
-    }
-
-    init()
-  </script>
+  <script type="module" src="js/historial.js"></script>
 </body>
-
 </html>

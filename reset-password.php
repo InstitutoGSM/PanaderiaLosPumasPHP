@@ -1,0 +1,45 @@
+<?php session_start(); ?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nueva contraseña — PanaderiaMarket</title>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+<div class="login-wrap" style="grid-template-columns:1fr">
+  <div class="login-col">
+    <div class="logo-wrap">
+      <div class="logo-circle">
+        <img src="assets/logo.png" alt="Logo Panaderia PUMA" onerror="this.style.display='none'">
+      </div>
+      <div class="logo-nombre">
+        <span class="top">Panaderia</span>
+        <span class="bot">PUMA</span>
+      </div>
+      <div class="logo-div"><div class="logo-div-dot"></div></div>
+    </div>
+    <div class="login-card">
+      <p class="panel-title">Nueva contraseña</p>
+      <p style="font-size:0.88rem;color:var(--gris);text-align:center;margin-bottom:18px">
+        Ingresá tu nueva contraseña para tu cuenta.
+      </p>
+      <div class="field">
+        <label for="np-pass">Nueva contraseña</label>
+        <input type="password" id="np-pass" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+      </div>
+      <div class="field">
+        <label for="np-pass2">Repetir contraseña</label>
+        <input type="password" id="np-pass2" placeholder="Repetí la contraseña" autocomplete="new-password">
+      </div>
+      <button class="btn-login" id="btn-np-guardar">Guardar nueva contraseña</button>
+      <p class="help"><a href="login.php">← Volver al inicio de sesión</a></p>
+    </div>
+  </div>
+</div>
+<div id="toast-box"></div>
+<script type="module" src="js/reset-password.js"></script>
+</body>
+</html>

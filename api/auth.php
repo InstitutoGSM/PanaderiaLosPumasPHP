@@ -1,89 +1,155 @@
 <?php
-require_once '../config.php';
+require_once __DIR__ . '/db.php';
+if (session_status() === PHP_SESSION_NONE) session_start();
 
-$method = $_SERVER['REQUEST_METHOD'];
+header('Content-Type: application/json; charset=utf-8');
+
 $action = $_GET['action'] ?? '';
 
-if ($method === 'OPTIONS') {
-    json_response(['ok' => true]);
+switch ($action) {
+
+    case 'session':
+        if (!empty($_SESSION['usuario_id'])) {
+            jsonOk([
+                'usuario_id'   => $_SESSION['usuario_id'],
+                'email'        => $_SESSION['email'],
+                'nombre'       => $_SESSION['nombre'],
+                'tipo'         => $_SESSION['tipo'],
+                'panaderia_id' => $_SESSION['panaderia_id'] ?? null,
+            ]);
+        }
+        jsonOk(null);
+
+    case 'login':
+        $body  = getBody();
+        $email = trim($body['email'] ?? '');
+        $pass  = $body['password'] ?? '';
+        if (!$email || !$pass) jsonError('Email y contraseña requeridos');
+
+        $db   = getDB();
+        $stmt = $db->prepare('SELECT * FROM usuarios WHERE email = ? AND activo = 1 LIMIT 1');
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+
+        if (!$user || !password_verify($pass, $user['password_hash'])) {
+            jsonError('Email o contraseña incorrectos', 401);
+        }
+
+        $panaderia_id = null;
+        if ($user['tipo'] === 'vendedor') {
+            $p = $db->prepare('SELECT id FROM panaderias WHERE usuario_id = ? LIMIT 1');
+            $p->execute([$user['id']]);
+            $pan = $p->fetch();
+            $panaderia_id = $pan['id'] ?? null;
+        }
+
+        $_SESSION['usuario_id']   = $user['id'];
+        $_SESSION['email']        = $user['email'];
+        $_SESSION['nombre']       = $user['nombre'];
+        $_SESSION['tipo']         = $user['tipo'];
+        $_SESSION['panaderia_id'] = $panaderia_id;
+
+        jsonOk([
+            'usuario_id'   => $user['id'],
+            'email'        => $user['email'],
+            'nombre'       => $user['nombre'],
+            'tipo'         => $user['tipo'],
+            'panaderia_id' => $panaderia_id,
+        ]);
+
+    case 'register':
+        $body   = getBody();
+        $email  = trim($body['email'] ?? '');
+        $pass   = $body['password'] ?? '';
+        $nombre = trim($body['nombre'] ?? '');
+        $tipo   = $body['tipo'] ?? 'comprador';
+
+        if (!$email || !$pass || !$nombre) jsonError('Todos los campos son obligatorios');
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) jsonError('Email inválido');
+        if (strlen($pass) < 6) jsonError('La contraseña debe tener al menos 6 caracteres');
+        if (!in_array($tipo, ['comprador', 'vendedor'], true)) jsonError('Tipo inválido');
+
+        $db    = getDB();
+        $check = $db->prepare('SELECT id FROM usuarios WHERE email = ? LIMIT 1');
+        $check->execute([$email]);
+        if ($check->fetch()) jsonError('El email ya está registrado');
+
+        $id   = generateUUID();
+        $hash = password_hash($pass, PASSWORD_BCRYPT);
+        $db->prepare('INSERT INTO usuarios (id, email, password_hash, nombre, tipo) VALUES (?,?,?,?,?)')
+           ->execute([$id, $email, $hash, $nombre, $tipo]);
+
+        $panaderia_id = null;
+        if ($tipo === 'vendedor') {
+            $pan_id = generateUUID();
+            $db->prepare('INSERT INTO panaderias (id, usuario_id, nombre) VALUES (?,?,?)')
+               ->execute([$pan_id, $id, $nombre]);
+            $panaderia_id = $pan_id;
+        }
+
+        $_SESSION['usuario_id']   = $id;
+        $_SESSION['email']        = $email;
+        $_SESSION['nombre']       = $nombre;
+        $_SESSION['tipo']         = $tipo;
+        $_SESSION['panaderia_id'] = $panaderia_id;
+
+        jsonOk(['usuario_id' => $id, 'email' => $email, 'nombre' => $nombre,
+                'tipo' => $tipo, 'panaderia_id' => $panaderia_id], 201);
+
+    case 'logout':
+        $_SESSION = [];
+        session_destroy();
+        jsonOk('Sesión cerrada');
+
+    case 'reset-request':
+        $body  = getBody();
+        $email = trim($body['email'] ?? '');
+        if (!$email) jsonError('Email requerido');
+
+        $db   = getDB();
+        $stmt = $db->prepare('SELECT id FROM usuarios WHERE email = ? AND activo = 1 LIMIT 1');
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+        if (!$user) jsonOk('Si el email existe, recibirás el enlace');
+
+        $token  = bin2hex(random_bytes(32));
+        $expira = date('Y-m-d H:i:s', strtotime('+1 hour'));
+        $db->prepare('INSERT INTO reset_tokens (usuario_id, token, expira_en) VALUES (?,?,?)')
+           ->execute([$user['id'], $token, $expira]);
+
+        jsonOk(['token' => $token, 'mensaje' => 'Token generado']);
+
+    case 'reset-password':
+        $body  = getBody();
+        $token = $body['token'] ?? '';
+        $pass  = $body['password'] ?? '';
+        if (!$token || !$pass) jsonError('Token y contraseña requeridos');
+        if (strlen($pass) < 6) jsonError('La contraseña debe tener al menos 6 caracteres');
+
+        $db   = getDB();
+        $stmt = $db->prepare(
+            'SELECT * FROM reset_tokens WHERE token = ? AND usado = 0 AND expira_en > NOW() LIMIT 1'
+        );
+        $stmt->execute([$token]);
+        $rt = $stmt->fetch();
+        if (!$rt) jsonError('Token inválido o expirado', 401);
+
+        $db->prepare('UPDATE usuarios SET password_hash = ? WHERE id = ?')
+           ->execute([password_hash($pass, PASSWORD_BCRYPT), $rt['usuario_id']]);
+        $db->prepare('UPDATE reset_tokens SET usado = 1 WHERE id = ?')->execute([$rt['id']]);
+        jsonOk('Contraseña actualizada');
+
+    case 'update-perfil':
+        $sess   = requireAuth();
+        $body   = getBody();
+        $nombre = trim($body['nombre'] ?? '');
+        if (!$nombre) jsonError('El nombre es obligatorio');
+
+        getDB()->prepare('UPDATE usuarios SET nombre = ?, telefono = ? WHERE id = ?')
+               ->execute([$nombre, $body['telefono'] ?? null, $sess['usuario_id']]);
+        $_SESSION['nombre'] = $nombre;
+        jsonOk('Perfil actualizado');
+
+    default:
+        jsonError('Acción no válida', 404);
 }
-
-// ── REGISTRO ──
-if ($action === 'registro' && $method === 'POST') {
-    $body     = get_body();
-    $email    = trim($body['email'] ?? '');
-    $password = $body['password'] ?? '';
-    $nombre   = trim($body['nombre'] ?? '');
-    $tipo     = $body['tipo'] ?? 'comprador';
-    $panaderia = trim($body['nombre_panaderia'] ?? '');
-
-    if (!$email || !$password || !$nombre) {
-        json_response(['error' => 'Faltan campos'], 400);
-    }
-
-    $db = getDB();
-
-    // Verificar si ya existe
-    $stmt = $db->prepare('SELECT id FROM usuarios WHERE email = ?');
-    $stmt->execute([$email]);
-    if ($stmt->fetch()) {
-        json_response(['error' => 'El email ya está registrado'], 400);
-    }
-
-    $id   = bin2hex(random_bytes(16));
-    $hash = password_hash($password, PASSWORD_DEFAULT);
-
-    $db->prepare('INSERT INTO usuarios (id, email, password) VALUES (?, ?, ?)')
-       ->execute([$id, $email, $hash]);
-
-    $db->prepare('INSERT INTO profiles (id, nombre, tipo, nombre_panaderia) VALUES (?, ?, ?, ?)')
-       ->execute([$id, $nombre, $tipo, $panaderia ?: null]);
-
-    $_SESSION['user_id'] = $id;
-    $_SESSION['email']   = $email;
-
-    json_response(['user' => ['id' => $id, 'email' => $email], 'tipo' => $tipo]);
-}
-
-// ── LOGIN ──
-if ($action === 'login' && $method === 'POST') {
-    $body     = get_body();
-    $email    = trim($body['email'] ?? '');
-    $password = $body['password'] ?? '';
-
-    if (!$email || !$password) {
-        json_response(['error' => 'Faltan campos'], 400);
-    }
-
-    $db   = getDB();
-    $stmt = $db->prepare('SELECT u.*, p.tipo FROM usuarios u JOIN profiles p ON p.id = u.id WHERE u.email = ?');
-    $stmt->execute([$email]);
-    $user = $stmt->fetch();
-
-    if (!$user || !password_verify($password, $user['password'])) {
-        json_response(['error' => 'Email o contraseña incorrectos'], 401);
-    }
-
-    $_SESSION['user_id'] = $user['id'];
-    $_SESSION['email']   = $user['email'];
-
-    json_response(['user' => ['id' => $user['id'], 'email' => $user['email']], 'tipo' => $user['tipo']]);
-}
-
-// ── LOGOUT ──
-if ($action === 'logout' && $method === 'POST') {
-    session_destroy();
-    json_response(['ok' => true]);
-}
-
-// ── OBT SESSION ──
-if ($action === 'session' && $method === 'GET') {
-    if (isset($_SESSION['user_id'])) {
-        json_response(['user' => ['id' => $_SESSION['user_id'], 'email' => $_SESSION['email']]]);
-    } else {
-        json_response(['user' => null]);
-    }
-}
-
-json_response(['error' => 'Acción no encontrada'], 404);
-?>

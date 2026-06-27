@@ -1,0 +1,55 @@
+<?php session_start(); ?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sobre Nosotros — PanaderiaMarket</title>
+  <link rel="stylesheet" href="css/global.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.php" class="navbar-logo">
+        <img src="assets/logo.png" alt="Logo" onerror="this.style.display='none'">
+        Panaderia<span class="marca">PUMA</span>
+      </a>
+      <div class="navbar-actions">
+        <a href="index.php" class="btn btn-ghost btn-sm">← Volver</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="ns-wrap">
+    <div class="ns-header">
+      <span class="emoji">🥖</span>
+      <h1>Sobre Nosotros</h1>
+      <p>PanaderiaMarket nació para conectar a panaderías artesanales con la gente de Catamarca que busca pan, facturas, tortas y dulces hechos con dedicación, directo de quien los elabora.</p>
+    </div>
+    <div class="ns-grid">
+      <div class="ns-card"><span class="ico">🎯</span><h3>Nuestra misión</h3><p>Ser el puente digital entre panaderos artesanales y sus clientes, sin intermediarios que encarezcan el producto.</p></div>
+      <div class="ns-card"><span class="ico">🤝</span><h3>Nuestros valores</h3><p>Transparencia, cercanía con el productor local y compromiso con la calidad alimentaria.</p></div>
+      <div class="ns-card"><span class="ico">🌱</span><h3>Nuestra visión</h3><p>Que cada panadería artesanal de la provincia tenga su espacio para crecer y darse a conocer.</p></div>
+    </div>
+    <div class="ns-sec">
+      <h2>🍞 ¿Cómo funciona?</h2>
+      <p><strong>Para compradores:</strong> explorá productos de distintas panaderías, armá tu carrito, elegí el medio de pago que prefieras y coordiná la entrega directamente con el vendedor.</p>
+      <p><strong>Para vendedores:</strong> creá tu perfil de panadería, publicá tus productos con fotos y precios, y gestioná tus pedidos desde un panel simple, todo desde el celular.</p>
+    </div>
+    <div class="ns-sec">
+      <h2>📍 Quiénes somos</h2>
+      <p>PanaderiaMarket es un proyecto desarrollado en el marco de una práctica educativa, pensado y construido para panaderías de San Fernando del Valle de Catamarca y alrededores.</p>
+    </div>
+    <div class="ns-contacto">
+      <h3>¿Tenés dudas o sugerencias?</h3>
+      <p>Escribinos, nos encanta saber de vos.</p>
+      <a href="mailto:pumapasteleria@gmail.com">✉️ pumapasteleria@gmail.com</a>
+      <a href="tel:+5493834223388">📞 +54 9 383 422-3388</a>
+    </div>
+  </div>
+
+  <footer class="ns-footer">
+    <a href="terminos.php">Términos y Condiciones</a> · <a href="privacidad.php">Privacidad</a>
+  </footer>
+</body>
+</html>

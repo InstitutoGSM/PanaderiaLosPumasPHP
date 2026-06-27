@@ -1,71 +1,56 @@
 <?php
-require_once '../config.php';
+require_once __DIR__ . '/db.php';
+if (session_status() === PHP_SESSION_NONE) session_start();
+header('Content-Type: application/json; charset=utf-8');
 
-$method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
+$db     = getDB();
 
-if ($method === 'OPTIONS') json_response(['ok' => true]);
+switch ($action) {
 
-// ── OBT CALIFICACIONES DE UN PRODUCTO ──
-if ($action === 'get' && $method === 'GET') {
-    $producto_id = $_GET['producto_id'] ?? '';
-    if (!$producto_id) json_response(['error' => 'Falta producto_id'], 400);
+    case 'listar':
+        $prod_id = $_GET['producto_id'] ?? ''; if (!$prod_id) jsonError('producto_id requerido');
+        $stmt = $db->prepare(
+            'SELECT c.*, u.nombre AS usuario_nombre, u.avatar_url AS usuario_avatar
+             FROM calificaciones c JOIN usuarios u ON u.id = c.usuario_id
+             WHERE c.producto_id = ? ORDER BY c.created_at DESC'
+        );
+        $stmt->execute([$prod_id]); jsonOk($stmt->fetchAll());
 
-    $db   = getDB();
-    $stmt = $db->prepare('SELECT * FROM calificaciones WHERE producto_id = ?');
-    $stmt->execute([$producto_id]);
-    $cals = $stmt->fetchAll();
+    case 'crear':
+        $sess      = requireAuth(); $body = getBody();
+        $prod_id   = $body['producto_id'] ?? '';
+        $estrellas = (int)($body['estrellas'] ?? 0);
+        if (!$prod_id) jsonError('producto_id requerido');
+        if ($estrellas < 1 || $estrellas > 5) jsonError('Estrellas deben ser entre 1 y 5');
 
-    $total    = count($cals);
-    $promedio = $total > 0
-        ? array_sum(array_column($cals, 'estrellas')) / $total
-        : 0;
+        $check = $db->prepare('SELECT id FROM calificaciones WHERE usuario_id=? AND producto_id=? LIMIT 1');
+        $check->execute([$sess['usuario_id'], $prod_id]);
+        if ($check->fetch()) jsonError('Ya calificaste este producto');
 
-    $mi_cal = 0;
-    if (isset($_SESSION['user_id'])) {
-        $stmt2 = $db->prepare('
-            SELECT estrellas FROM calificaciones
-            WHERE producto_id = ? AND comprador_id = ?
-        ');
-        $stmt2->execute([$producto_id, $_SESSION['user_id']]);
-        $mia    = $stmt2->fetch();
-        $mi_cal = $mia['estrellas'] ?? 0;
-    }
+        $id = generateUUID();
+        $db->prepare(
+            'INSERT INTO calificaciones (id,producto_id,usuario_id,pedido_id,estrellas,comentario)
+             VALUES (?,?,?,?,?,?)'
+        )->execute([$id, $prod_id, $sess['usuario_id'], $body['pedido_id'] ?? null,
+                    $estrellas, trim($body['comentario'] ?? '') ?: null]);
 
-    json_response([
-        'total'    => $total,
-        'promedio' => $promedio,
-        'mi_cal'   => $mi_cal,
-    ]);
+        $avg = $db->prepare('SELECT ROUND(AVG(estrellas),1) AS r, COUNT(*) AS t FROM calificaciones WHERE producto_id=?');
+        $avg->execute([$prod_id]); $s = $avg->fetch();
+        jsonOk(['id' => $id, 'rating' => $s['r'], 'total' => $s['t']], 201);
+
+    case 'mi-calificacion':
+        $sess    = requireAuth(); $prod_id = $_GET['producto_id'] ?? '';
+        if (!$prod_id) jsonError('producto_id requerido');
+        $stmt = $db->prepare('SELECT * FROM calificaciones WHERE usuario_id=? AND producto_id=? LIMIT 1');
+        $stmt->execute([$sess['usuario_id'], $prod_id]); jsonOk($stmt->fetch() ?: null);
+
+    case 'eliminar':
+        $sess = requireTipo('admin'); $body = getBody(); $id = $body['id'] ?? '';
+        if (!$id) jsonError('ID requerido');
+        $db->prepare('DELETE FROM calificaciones WHERE id=?')->execute([$id]);
+        jsonOk('Calificación eliminada');
+
+    default:
+        jsonError('Acción no válida', 404);
 }
-
-// ── CALIFICAR ──
-if ($action === 'calificar' && $method === 'POST') {
-    if (!isset($_SESSION['user_id'])) json_response(['error' => 'No autorizado'], 401);
-
-    $body        = get_body();
-    $producto_id = $body['producto_id'] ?? '';
-    $estrellas   = intval($body['estrellas'] ?? 0);
-
-    if (!$producto_id || $estrellas < 1 || $estrellas > 5) {
-        json_response(['error' => 'Datos inválidos'], 400);
-    }
-
-    $db = getDB();
-    $db->prepare('
-        INSERT INTO calificaciones (id, producto_id, comprador_id, estrellas)
-        VALUES (?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE estrellas = ?
-    ')->execute([
-        bin2hex(random_bytes(16)),
-        $producto_id,
-        $_SESSION['user_id'],
-        $estrellas,
-        $estrellas,
-    ]);
-
-    json_response(['ok' => true]);
-}
-
-json_response(['error' => 'Acción no encontrada'], 404);
-?>

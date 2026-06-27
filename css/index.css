@@ -1,4 +1,4 @@
-/* ── Hero ── */
+/* -- Hero -- */
 .hero {
   background: linear-gradient(135deg, var(--marron) 0%, var(--marron-mid) 100%);
   color: var(--blanco);
@@ -13,32 +13,23 @@
   pointer-events: none;
 }
 .hero-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 32px;
-  flex-wrap: wrap;
+  display: flex; align-items: center;
+  justify-content: space-between; gap: 32px; flex-wrap: wrap;
 }
 .hero-texto         { flex: 1; min-width: 260px; }
 .hero-texto h1      {
   color: var(--blanco);
   font-size: clamp(1.4rem, 2.8vw, 2.2rem);
-  margin-bottom: 8px;
-  line-height: 1.2;
+  margin-bottom: 8px; line-height: 1.2;
 }
-.hero-texto p       {
-  color: rgba(255,255,255,0.72);
-  font-size: 0.95rem;
-  margin: 0;
-}
+.hero-texto p       { color: rgba(255,255,255,0.72); font-size: 0.95rem; margin: 0; }
 .hero-search-wrap   { flex: 1; min-width: 260px; max-width: 440px; }
 .hero-search        { display: flex; gap: 10px; }
 .hero-search input  {
   flex: 1;
   background: rgba(255,255,255,0.12);
   border-color: rgba(255,255,255,0.22);
-  color: var(--blanco);
-  margin-bottom: 0;
+  color: var(--blanco); margin-bottom: 0;
 }
 .hero-search input::placeholder { color: rgba(255,255,255,0.45); }
 .hero-search input:focus {
@@ -46,14 +37,13 @@
   border-color: var(--naranja-lt);
 }
 
-/* ── Sección panaderías ── */
+/* -- Seccion panaderías -- */
 .sec-titulo {
   font-family: 'Playfair Display', serif;
-  font-size: 1.4rem; font-weight: 700;
-  margin-bottom: 14px;
+  font-size: 1.4rem; font-weight: 700; margin-bottom: 14px;
 }
-.panaderias-row  { display: flex; gap: 12px; flex-wrap: wrap; }
-.panaderia-chip  {
+.panaderias-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.panaderia-chip {
   display: inline-flex; align-items: center; gap: 10px;
   background: var(--blanco); border-radius: 50px;
   padding: 9px 18px; box-shadow: var(--sombra);
@@ -69,26 +59,23 @@
 }
 .chip-nombre { font-weight: 700; font-size: 0.88rem; }
 
-/* ── Toolbar ── */
+/* -- barra herramientas -- */
 .toolbar {
   display: flex; justify-content: space-between;
-  align-items: center; margin: 16px 0;
-  flex-wrap: wrap; gap: 10px;
+  align-items: center; margin: 16px 0; flex-wrap: wrap; gap: 10px;
 }
 .toolbar-count { font-size: 0.88rem; color: var(--gris); }
 .toolbar select { width: auto; margin: 0; font-size: 0.88rem; padding: 8px 12px; }
 
-/* ── Estado vacío ── */
-.empty-state        { text-align: center; padding: 70px 0; display: none; }
-.empty-state .ico   { font-size: 3.5rem; display: block; margin-bottom: 14px; }
-.empty-state h3     { margin-bottom: 8px; }
-.empty-state p      { color: var(--gris); }
+/* -- Estado vacio -- */
+.empty-state      { text-align: center; padding: 70px 0; display: none; }
+.empty-state .ico { font-size: 3.5rem; display: block; margin-bottom: 14px; }
+.empty-state h3   { margin-bottom: 8px; }
+.empty-state p    { color: var(--gris); }
 
-/* ── Padding secciones ── */
 .sec    { padding: 32px 0; }
 .sec-sm { padding: 16px 0; }
 
-/* ── Sin stock overlay en card ── */
 .card.sin-stock .card-img,
 .card.sin-stock .card-img-ph {
   filter: grayscale(60%);
@@ -104,9 +91,7 @@
   font-weight: 700; pointer-events: none;
   white-space: nowrap;
 }
-.card.sin-stock .btn-agregar {
-  opacity: 0.5; cursor: not-allowed;
-}
+.card.sin-stock .btn-agregar { opacity: 0.5; cursor: not-allowed; }
 
 /* ══════════════════════════════
    RESPONSIVE INDEX
@@ -120,7 +105,6 @@
   .hero-search input,
   .hero-search .btn  { width: 100%; justify-content: center; }
 }
-
 @media (max-width: 480px) {
   .sec-titulo        { font-size: 1.2rem; }
   .panaderias-row    { gap: 8px; }
@@ -130,14 +114,10 @@
   .toolbar           { flex-direction: column; align-items: flex-start; }
   .toolbar select    { width: 100%; }
 }
-
 @media (max-width: 600px) {
   .filtros {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding-bottom: 8px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    flex-wrap: nowrap; overflow-x: auto;
+    padding-bottom: 8px; -webkit-overflow-scrolling: touch; scrollbar-width: none;
   }
   .filtros::-webkit-scrollbar { display: none; }
   .filtro  { flex-shrink: 0; }
